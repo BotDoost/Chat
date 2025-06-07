@@ -1,5 +1,5 @@
 // آدرس API Route در Vercel - بعد از deploy جایگزین کنید
-const API_URL = 'https://your-vercel-app.vercel.app/api/chat';
+const API_URL = 'https://chat-liard-eight.vercel.app/api/chat';
 
 const chatContainer = document.getElementById('chatContainer');
 const userInput = document.getElementById('userInput');
