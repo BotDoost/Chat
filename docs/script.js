@@ -1,5 +1,5 @@
 // آدرس API Route در Vercel
-const API_URL = 'https://chat-liard-eight.vercel.app/api/chat';
+const API_URL = 'https://chat-liard-eight.vercel.app/api/chat.js';
 
 const chatContainer = document.getElementById('chatContainer');
 const userInput = document.getElementById('userInput');
