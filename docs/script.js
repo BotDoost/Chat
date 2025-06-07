@@ -1,4 +1,4 @@
-// آدرس API Route در Vercel - بعد از deploy جایگزین کنید
+// آدرس API Route در Vercel
 const API_URL = 'https://chat-liard-eight.vercel.app/api/chat';
 
 const chatContainer = document.getElementById('chatContainer');
@@ -6,47 +6,43 @@ const userInput = document.getElementById('userInput');
 const sendButton = document.getElementById('sendButton');
 const statusDiv = document.getElementById('status');
 
-// تابع کمکی برای لاگ کردن مراحل
-function logStep(step, details = '') {
-    console.log(`[Step ${step}] ${details}`);
-    // همچنین می‌توانید این اطلاعات را در صفحه هم نمایش دهید
-    const logDiv = document.createElement('div');
-    logDiv.classList.add('log-message');
-    logDiv.textContent = `[Debug] Step ${step}: ${details}`;
-    chatContainer.appendChild(logDiv);
+// تابع برای نمایش لاگ‌ها در صفحه
+function showDebugLog(message) {
+    const debugLog = document.createElement('div');
+    debugLog.className = 'debug-log';
+    debugLog.textContent = `[Debug] ${message}`;
+    chatContainer.appendChild(debugLog);
+    chatContainer.scrollTop = chatContainer.scrollHeight;
 }
 
 function addMessage(role, content) {
-    logStep(1, `Adding ${role} message: ${content}`);
+    showDebugLog(`Adding ${role} message: ${content.substring(0, 50)}...`);
     try {
         const messageDiv = document.createElement('div');
-        messageDiv.classList.add('message', `${role}-message`);
+        messageDiv.className = `message ${role}-message`;
         messageDiv.textContent = content;
         chatContainer.appendChild(messageDiv);
         chatContainer.scrollTop = chatContainer.scrollHeight;
-        logStep(1.1, `Message added successfully`);
     } catch (error) {
-        logStep(1.2, `Error adding message: ${error.message}`);
+        showDebugLog(`Error in addMessage: ${error.message}`);
         throw error;
     }
 }
 
 async function sendMessage() {
-    logStep(2, 'sendMessage function started');
     const message = userInput.value.trim();
-    
     if (!message) {
-        logStep(2.1, 'Empty message, returning');
+        showDebugLog("Message is empty, not sending");
         return;
     }
 
-    try {
-        logStep(3, `Processing message: "${message}"`);
-        addMessage('user', message);
-        userInput.value = '';
-        statusDiv.textContent = 'در حال پردازش...';
+    showDebugLog("Starting sendMessage function");
+    addMessage('user', message);
+    userInput.value = '';
+    statusDiv.textContent = 'در حال پردازش...';
 
-        logStep(4, 'Preparing fetch request');
+    try {
+        showDebugLog("Preparing request to server");
         const requestOptions = {
             method: 'POST',
             headers: {
@@ -54,45 +50,48 @@ async function sendMessage() {
             },
             body: JSON.stringify({ message })
         };
-        logStep(4.1, `Request options: ${JSON.stringify(requestOptions)}`);
-
-        logStep(5, 'Sending request to API');
+        
+        showDebugLog(`Sending to ${API_URL}`);
         const response = await fetch(API_URL, requestOptions);
-        logStep(5.1, `Received response, status: ${response.status}`);
+        showDebugLog(`Received response, status: ${response.status}`);
 
         if (!response.ok) {
             const errorText = await response.text();
-            logStep(5.2, `Response not OK. Status: ${response.status}, Text: ${errorText}`);
-            throw new Error(`خطا در ارتباط با سرور: ${response.status} - ${errorText}`);
+            showDebugLog(`Server error: ${response.status} - ${errorText}`);
+            throw new Error(`سرور پاسخ نامعتبر داد: ${response.status}`);
         }
 
-        logStep(6, 'Parsing response JSON');
         const data = await response.json();
-        logStep(6.1, `Parsed data: ${JSON.stringify(data)}`);
-
-        const botResponse = data[0]?.generated_text || 'پاسخی دریافت نشد';
-        logStep(7, `Bot response: ${botResponse}`);
+        showDebugLog(`Response data: ${JSON.stringify(data).substring(0, 100)}...`);
+        
+        // اصلاح شده برای مدیریت پاسخ‌های مختلف
+        let botResponse = 'پاسخی دریافت نشد';
+        if (Array.isArray(data) && data.length > 0 && data[0].generated_text) {
+            botResponse = data[0].generated_text;
+        } else if (data.generated_text) {
+            botResponse = data.generated_text;
+        } else if (data.message) {
+            botResponse = data.message;
+        }
+        
+        showDebugLog(`Extracted bot response: ${botResponse}`);
         addMessage('bot', botResponse);
 
     } catch (error) {
-        logStep('ERROR', `Caught error: ${error.message}`);
-        console.error('Full error:', error);
-        addMessage('bot', `خطا: ${error.message}`);
+        showDebugLog(`ERROR: ${error.message}`);
+        addMessage('bot', `خطا در ارتباط: ${error.message}`);
     } finally {
         statusDiv.textContent = '';
-        logStep(8, 'Request completed');
+        showDebugLog("Request completed");
     }
 }
 
-// اضافه کردن لاگ برای رویدادها
-logStep(0, 'Script initialized');
-sendButton.addEventListener('click', () => {
-    logStep('click', 'Send button clicked');
-    sendMessage();
-});
+// مقداردهی اولیه
+showDebugLog("سیستم چت آماده است");
+sendButton.addEventListener('click', sendMessage);
 userInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') {
-        logStep('keypress', 'Enter key pressed');
-        sendMessage();
-    }
+    if (e.key === 'Enter') sendMessage();
 });
+
+// استایل برای لاگ‌های دیباگ
+const style = document.createElement(
